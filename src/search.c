@@ -7,12 +7,17 @@
 #include <htslib/hfile.h>
 #include <htslib/vcf.h>
 
-//from giggle
 #include <src/giggle_index.h>
 #include <src/ll.h>
 #include <src/file_read.h>
 #include <src/lists.h>
 #include <src/util.h>
+// temporarily do relative include so my text editor doesn't yell at me
+/* #include "../../giggle/src/giggle_index.h" */
+/* #include "../../giggle/src/ll.h" */
+/* #include "../../giggle/src/file_read.h" */
+/* #include "../../giggle/src/lists.h" */
+/* #include "../../giggle/src/util.h" */
 
 #include "search.h"
 
@@ -460,7 +465,8 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                uint32_t slop,
                                uint32_t *sample_ids,
                                uint32_t num_samples,
-                               struct uint_pair **sample_alt_depths)
+                               struct uint_pair **sample_alt_depths,
+                               bool giggle_only)
 {
 
 #if DEBUG
@@ -597,10 +603,21 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                          slop,
                                          sv_type);
             if (hit == 1) {
-                if (evidence_type == 0)
+                if (giggle_only) {
+                    // we do the printing here rather than in the "print_results"
+                    // function to catch the incrememtally added giggle results without
+                    // the need to maintain a growing array of results. In the future,
+                    // we may make a separate function that does this.
+                    /* printf("%s\n", raw_result); */
+                    printf("%s\t%d\t%d\t%s\t%d\t%d\t%s\n",
+                           in_left_bp->chrm, in_left_bp->start, in_left_bp->end,
+                           in_right_bp->chrm, in_right_bp->start, in_right_bp->end,
+                           evidence_type == 0 ? "paired" : "split");
+                } else if (evidence_type == 0) {
                     (*sample_alt_depths)[i].first += 1; //pairend-read
-                else
+                } else {
                     (*sample_alt_depths)[i].second += 1; //split-reads
+                }
             }
         }
         giggle_iter_destroy(&gqi);
